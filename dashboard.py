@@ -59,7 +59,7 @@ page = st.sidebar.radio("Go to", ["Introduction", "Visualizations", "Predictive 
 # Introduction page
 if page == "Introduction":
     st.title("Introduction of Superstore Dashboard🛍️")
-    st.image("shopping.jpg", use_column_width=True)
+    st.image("shopping.jpg", use_container_width=True)
     st.markdown("""
     ## Overview and Aims
     This dashboard aims to provide a comprehensive analysis and forecasting capabilities for sales data,empowering data-driven decision-making for optimizing business strategies
@@ -70,16 +70,11 @@ if page == "Introduction":
     - Machine learning-based sales forecasting
     """)
     
-    with st.expander("Data Preview"):
-        st.write(df.head())
-        st.write(f"Total records: {len(df)}")
-        st.write(f"Total variables: {len(df.columns)}")
-        st.write(f"Time range: {df['Order Date'].min().date()} to {df['Order Date'].max().date()}")
-
     st.subheader("📋 Dataset Overview")
-    # Display basic information about the dataset
-    st.write(f"This dataset contains *{df.shape[0]} rows* and *{df.shape[1]} columns*.")
     st.write(df.head())
+    st.write(f"Total records: {len(df)}")
+    st.write(f"Total variables: {len(df.columns)}")
+    st.write(f"Time range: {df['Order Date'].min().date()} to {df['Order Date'].max().date()}")
    
     # Create a summary DataFrame
     st.write(f"**Dataset Features and Their Data Types:**")
@@ -91,6 +86,8 @@ if page == "Introduction":
     
     # Rearranging the columns for better readability
     info_df = info_df[['Column Name', 'Data Type']]
+    
+    st.write(info_df)
 
 # Visualizations page
 elif page == "Visualizations":
