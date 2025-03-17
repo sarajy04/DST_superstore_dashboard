@@ -21,10 +21,20 @@ def load_data():
     try:
         df = pd.read_csv('train.csv')
         
-        # Specify the date format for conversion
+        # data cleaning
+        # Drop 'Row ID' column
+        df.drop('Row ID', axis=1, inplace=True)
+        
+        # Convert date columns to datetime format
         df['Order Date'] = pd.to_datetime(df['Order Date'], format='%d/%m/%Y')
         df['Ship Date'] = pd.to_datetime(df['Ship Date'], format='%d/%m/%Y')
         
+        # Create 'Month_order' and 'Year_order' columns
+        df['Month_order'] = df['Order Date'].dt.to_period('M')
+        df['Year_order'] = df['Order Date'].dt.to_period('Y')
+        
+        # Fill missing values in 'Postal Code'
+        df['Postal Code'] = df['Postal Code'].fillna(5401)
         return df
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
@@ -49,10 +59,11 @@ page = st.sidebar.radio("Go to", ["Introduction", "Visualizations", "Predictive 
 # Introduction page
 if page == "Introduction":
     st.title("Introduction of Superstore Dashboard🛍️")
+    st.image("shopping.jpg", use_column_width=True)
     st.markdown("""
-    ## Overview
-    This dashboard provides comprehensive analysis and forecasting capabilities for sales data.
-    Includes:
+    ## Overview and Aims
+    This dashboard aims to provide a comprehensive analysis and forecasting capabilities for sales data,empowering data-driven decision-making for optimizing business strategies
+    Including:
     - Historical sales trends
     - Product performance tracking
     - Regional sales breakdown
@@ -62,7 +73,24 @@ if page == "Introduction":
     with st.expander("Data Preview"):
         st.write(df.head())
         st.write(f"Total records: {len(df)}")
+        st.write(f"Total variables: {len(df.columns)}")
         st.write(f"Time range: {df['Order Date'].min().date()} to {df['Order Date'].max().date()}")
+
+    st.subheader("📋 Dataset Overview")
+    # Display basic information about the dataset
+    st.write(f"This dataset contains *{df.shape[0]} rows* and *{df.shape[1]} columns*.")
+    st.write(df.head())
+   
+    # Create a summary DataFrame
+    st.write(f"**Dataset Features and Their Data Types:**")
+
+    info_df = pd.DataFrame({
+        'Column Name': df.columns,
+        'Data Type': [df[col].dtype for col in df.columns],
+    })
+    
+    # Rearranging the columns for better readability
+    info_df = info_df[['Column Name', 'Data Type']]
 
 # Visualizations page
 elif page == "Visualizations":
