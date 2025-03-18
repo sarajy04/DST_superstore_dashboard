@@ -93,10 +93,29 @@ if page == "Introduction":
 elif page == "Visualizations":
     st.title("📊 Sales Performance Analysis")
     
-    # Date range filter
-    date_options = df['Order Date'].dt.date.unique()
-    start_date = st.sidebar.date_input("Start Date", min(date_options))
-    end_date = st.sidebar.date_input("End Date", max(date_options))
+    #Selection box for analysis type
+    analysis_type = st.selectbox("View Sales Based On :", ["Timeline", "Category", "Geographical Location", "All of the Above"])
+    
+    # Visualization 1 - Line graph for sales over time
+    if analysis_type == "Timeline":
+        st.subheader("Line Graph for Sales Over Time")
+
+        # Time granularity selection
+        time_granularity = st.selectbox("Select Time Granularity:", ["Monthly", "Yearly"])
+
+        # Group data by Monthly or Yearly
+        if time_granularity == "Monthly":
+            sales_over_time = df.groupby(df['Order Date'].dt.to_period('M'))['Sales'].sum().reset_index()
+            sales_over_time['Order Date'] = sales_over_time['Order Date'].dt.to_timestamp()
+        else:  
+            sales_over_time = df.groupby(df['Order Date'].dt.to_period('Y'))['Sales'].sum().reset_index()
+            sales_over_time['Order Date'] = sales_over_time['Order Date'].dt.to_timestamp()
+
+        # Plot line graph
+        fig = px.line(sales_over_time, x='Order Date', y='Sales', 
+                      title=f"{time_granularity} Sales Trend", 
+                      labels={'Order Date': 'Date', 'Sales': 'Sales (USD)'})
+        st.plotly_chart(fig)
     
     # Other filters
     with st.sidebar:
