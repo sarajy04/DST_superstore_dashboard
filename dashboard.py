@@ -144,7 +144,7 @@ elif page == "Visualizations":
         st.subheader("Line Graph for Sales Over Time")
         # Time granularity selection
         time_granularity = st.selectbox("Select Time Granularity:", ["Monthly", "Yearly"])
-
+    
         # Group data by Monthly or Yearly
         if time_granularity == "Monthly":
             sales_over_time = df.groupby(df['Order Date'].dt.to_period('M'))['Sales'].sum().reset_index()
@@ -152,13 +152,13 @@ elif page == "Visualizations":
         else:  
             sales_over_time = df.groupby(df['Order Date'].dt.to_period('Y'))['Sales'].sum().reset_index()
             sales_over_time['Order Date'] = sales_over_time['Order Date'].dt.to_timestamp()
-
+    
         # Plot line graph
         fig = px.line(sales_over_time, x='Order Date', y='Sales', 
                       title=f"{time_granularity} Sales Trend", 
                       labels={'Order Date': 'Date', 'Sales': 'Sales (USD)'})
         st.plotly_chart(fig)
-
+    
         st.markdown(f"""
         ### {time_granularity} Sales Trend Analysis
         - **Purpose**: 
@@ -227,10 +227,9 @@ elif page == "Visualizations":
         with st.expander("**Detailed Sales Distribution per Category**"):
             # Sort both category and sub-category as per sales
             Top_subcat = df.groupby(["Category", "Sub-Category"])["Sales"].sum().reset_index()
-            Top_subcat = Top_subcat.sort_values("Sales", ascending=False).head(10)
-            Top_subcat["Sales"] = Top_subcat["Sales"].astype(int)
-            Top_subcat = Top_subcat.sort_values("Category")
-            Top_subcat.reset_index(drop=True, inplace=True)
+            Top_subcat = Top_subcat.sort_values("Sales", ascending=False).head(10)  # Sort and get top 10
+            Top_subcat["Sales"] = Top_subcat["Sales"].astype(int)  # Cast Sales column to integer
+            Top_subcat = Top_subcat.sort_values("Category").reset_index(drop=True)
 
             # Calculate the total sales of all categories
             Top_subcat_1 = Top_subcat.groupby("Category")["Sales"].sum().reset_index()
@@ -264,6 +263,7 @@ elif page == "Visualizations":
             ax.axis('equal')
             plt.tight_layout()
             st.pyplot(fig)
+
             st.markdown(f"""
                 **Sales Distribution Overview:** 
                 - This pie chart illustrates the detailed distribution of sales across product categories and sub-categories. 
@@ -285,7 +285,6 @@ elif page == "Visualizations":
             selected_category = st.selectbox("Select Category:", df['Category'].unique())
             filtered_data = df[df['Category'] == selected_category]
             group_col = 'Category'
-
         else:
             selected_category = st.selectbox("Select Sub-Category:", df['Sub-Category'].unique())
             filtered_data = df[df['Sub-Category'] == selected_category]
@@ -419,7 +418,7 @@ elif page == "Visualizations":
             - Tailor marketing and sales strategies to the state's performance trends.
             - Optimize inventory and resource allocation for the state.
         """)
-        
+
         # Overall sales trend by region
         st.subheader("Overall Sales Trend by Region")
         
