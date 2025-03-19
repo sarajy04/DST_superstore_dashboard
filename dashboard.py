@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
+import plotly.graph_objects as go
 from prophet import Prophet
 from prophet.plot import plot_plotly
 from datetime import datetime
@@ -163,6 +164,22 @@ elif page == "Visualizations":
                       title=f"{time_granularity} Sales Trend", 
                       labels={'Order Date': 'Date', 'Sales': 'Sales (USD)'})
         st.plotly_chart(fig)
+
+        st.markdown(f"""
+        ### {time_granularity} Sales Trend Analysis
+        - **Purpose**: 
+            - Analyze sales trends over time to identify patterns, seasonality, and fluctuations.
+        - **Granularity Options**:
+            - Monthly: Aggregates sales data by month for detailed short-term trends.
+            - Yearly: Aggregates sales data by year for long-term performance insights.
+        - **Visualization**:
+            - Line graph displaying sales trends over the selected time granularity.
+        - **Insights**:
+            - Highlights periods of high or low sales performance.
+            - Helps identify seasonal trends and growth opportunities.
+        - **Actionable Use**:
+            - Inform strategic decisions for inventory management, marketing campaigns, and resource allocation.
+        """)
     
     #category visualization 
     elif analysis_type == "📚Category":
@@ -341,6 +358,147 @@ elif page == "Visualizations":
                      - Highest sales recorded:`{peak_sales:,.0f} on `{peak_date.strftime('%Y-%m-%d')}.
                      - Observe seasonal fluctuations and peaks to understand demand variations.""")
 
+    # Visualization 3 - Sales by Geographical Location
+    elif analysis_type == "Geographical Location":
+        st.subheader("Sales by States")
+        
+        # Define state and state_code lists
+        state = ['Alabama', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 
+                'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 
+                'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 
+                'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 
+                'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 
+                'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming']
+
+        state_code = ['AL','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA',
+                    'MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD',
+                    'TN','TX','UT','VT','VA','WA','WV','WI','WY']
+
+        # Create a DataFrame for states and their codes
+        state_df = pd.DataFrame({'State Code': state_code, 'State': state})
+
+        # Ensure numeric columns are summed
+        numeric_columns = df.select_dtypes(include=['number']).columns
+        sales = df.groupby("State")[numeric_columns].sum().sort_values("Sales", ascending=False)
+
+        # Reset index to make "State" a column
+        sales.reset_index(inplace=True)
+
+        # Drop "Postal Code" safely using axis=1
+        if 'Postal Code' in sales.columns:
+            sales.drop('Postal Code', axis=1, inplace=True)
+
+        # Sort by "State"
+        sales = sales.sort_values('State', ascending=True).reset_index(drop=True)
+
+        # Merge sales with state codes
+        sales = sales.merge(state_df, on="State", how="left")
+
+        # Add text labels
+        sales['text'] = sales['State'] + '<br>Sales: ' + sales['Sales'].astype(str)
+
+        # Create the Choropleth map
+        fig = go.Figure(data=go.Choropleth(
+            locations=sales['State Code'],  # Spatial coordinates
+            text=sales['text'],
+            z=sales['Sales'].astype(float),  # Data to be color-coded
+            locationmode='USA-states',  # Set of locations match entries in `locations`
+            colorscale='Blues',
+            colorbar_title="Sales",
+        ))
+
+        fig.update_layout(
+            geo_scope='usa',  # Limit map scope to USA
+        )
+
+        # Display the map 
+        st.plotly_chart(fig)
+
+        st.markdown("""
+        ### Geographical Sales Analysis
+        - **Purpose**: 
+            - Visualize sales distribution across different states in the USA.
+        - **Visualization**: 
+            - Interactive choropleth map with color-coded sales data by state.
+            - Hover over states to view detailed sales figures.
+        - **Insights**: 
+            - Identify regions with high or low sales performance.
+            - Highlight geographical trends and disparities in sales.
+        - **Actionable Use**: 
+            - Optimize regional strategies for marketing, inventory, and resource allocation.
+            - Focus efforts on underperforming regions or capitalize on high-performing areas.
+        """)
+
+        # Sales Trend Analysis by State
+        st.subheader("Sales Trend Analysis by State")
+        
+        # Get unique states from the dataset
+        states = df['State'].unique()
+
+        # State selection dropdown
+        selected_state = st.selectbox("Select a state to view sales trend:", states)
+
+        # Filter data for the selected state
+        state_data = df[df['State'] == selected_state]
+
+        # Group data by month and calculate sales for the selected state
+        state_sales_trend = state_data.groupby(state_data['Order Date'].dt.to_period('M'))['Sales'].sum().reset_index()
+        state_sales_trend['Order Date'] = state_sales_trend['Order Date'].dt.to_timestamp()
+
+        # Plot line graph for sales trend by state
+        fig = px.line(state_sales_trend, x='Order Date', y='Sales',
+                title=f"Sales Trend for {selected_state} State",
+                labels={'Order Date': 'Date', 'Sales': 'Sales (USD)'},
+                template="plotly_white")
+        st.plotly_chart(fig)
+
+        st.markdown(""" 
+        - **Purpose**: 
+            - Analyze sales trends for the selected state over time.
+        - **Visualization**: 
+            -Line graph showing monthly sales trends for the selected state.
+        - **Insights**:
+            - Identify periods of high or low sales performance in the state.
+            - Understand seasonal trends and growth opportunities specific to the state.
+        - **Actionable Use**:
+            - Tailor marketing and sales strategies to the state's performance trends.
+            - Optimize inventory and resource allocation for the state.
+        """)
+        
+        # Overall sales trend by region
+        subheader = st.subheader("Overall Sales Trend by Region")
+        
+        # Multi-select dropdown for state filtering
+        selected_states = st.multiselect("Select States to View Trends:", options=df['State'].unique(), default=df['State'].unique())
+
+        # Filter data based on selected states
+        filtered_data = df[df['State'].isin(selected_states)]
+
+        # Group data by State and Month, then calculate total sales
+        state_sales_trend = filtered_data.groupby([filtered_data['Order Date'].dt.to_period('M'), 'State'])['Sales'].sum().reset_index()
+        state_sales_trend['Order Date'] = state_sales_trend['Order Date'].dt.to_timestamp()
+
+        # Unified View: Sales Trends by State
+        fig = px.line(state_sales_trend, x='Order Date', y='Sales', color='State',
+            title="Overall Sales Trend by State",
+            labels={'Order Date': 'Date', 'Sales': 'Sales (USD)', 'State': 'State'},
+                template="plotly_white")
+
+        st.plotly_chart(fig)
+
+        st.markdown("""
+        - **Purpose**: 
+            - Analyze sales trends across all regions over time.
+        - **Visualization**: 
+            - Line graph showing monthly sales trends for each region.
+        - **Insights**:
+            - Compare sales performance across regions.
+            - Identify regions with consistent growth or seasonal fluctuations.
+        - **Actionable Use**:
+            - Develop region-specific strategies based on performance trends.
+            - Allocate resources to regions with high growth potential.
+        """)
+        
 # Predictive Model page
 else:
     st.title("🔮 Sales Forecasting")
