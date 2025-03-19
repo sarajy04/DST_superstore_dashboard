@@ -52,6 +52,53 @@ if df.empty:
     """)
     st.stop()
 
+# Add a theme toggle
+theme = st.sidebar.selectbox("Theme", ["Light", "Dark"])
+if theme == "Dark":
+    st.markdown("""
+        <style>
+            /* Dark theme styling */
+            .stApp {
+                background-color: #1b2e5e; /* Dark blue background */
+                color: #ecf0f1; /* Light gray text */
+            }
+            /* Sidebar styling */
+            .css-1d391kg {
+                background-color: #2c3e50; /* Dark blue sidebar */
+                color: #ecf0f1; /* Light gray text */
+            }
+            /* Metric styling */
+            div[data-testid="metric-container"] {
+                background-color: #34495e; /* Slightly lighter dark blue */
+                border: 1px solid #bdc3c7; /* Border around metrics */
+                border-radius: 10px; /* Rounded corners */
+                padding: 10px; /* Add padding */
+                            }
+        </style>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+        <style>
+            /* Light theme styling */
+            .stApp {
+                background-color: #f4f4f9; /* Light gray background */
+                color: #2c3e50; /* Dark blue text */
+            }
+            /* Sidebar styling */
+            .css-1d391kg {
+                background-color: #ffffff; /* White sidebar */
+                color: #2c3e50; /* Dark blue text */
+            }
+            /* Metric styling */
+            div[data-testid="metric-container"] {
+                background-color: #ecf0f1; /* Light gray background for metrics */
+                border: 1px solid #bdc3c7; /* Border around metrics */
+                border-radius: 10px; /* Rounded corners */
+                padding: 10px; /* Add padding */
+                           }
+        </style>
+    """, unsafe_allow_html=True)
+
 # Sidebar navigation
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["Introduction", "Visualizations", "Predictive Model"])
@@ -94,10 +141,10 @@ elif page == "Visualizations":
     st.title("📊 Sales Performance Analysis")
     
     #Selection box for analysis type
-    analysis_type = st.selectbox("View Sales Based On :", ["Timeline", "Category", "Geographical Location", "All of the Above"])
+    analysis_type = st.selectbox("View Sales Based On :", ["⌛Timeline", "📚Category", "🌍Geographical Location", "💯 All of the Above"])
     
     # Visualization 1 - Line graph for sales over time
-    if analysis_type == "Timeline":
+    if analysis_type == "⌛Timeline":
         st.subheader("Line Graph for Sales Over Time")
 
         # Time granularity selection
@@ -118,7 +165,7 @@ elif page == "Visualizations":
         st.plotly_chart(fig)
     
     #category visualization 
-    elif analysis_type == "Category":
+    elif analysis_type == "📚Category":
         st.subheader("Sales Distribution per Category")
         # Group by category and sum sales, then sort
         Top_category = df.groupby("Category")["Sales"].sum().reset_index().sort_values("Sales", ascending=False)
@@ -154,17 +201,145 @@ elif page == "Visualizations":
         plt.show()
         st.pyplot(fig) 
 
-        # category selection
-        category_selection = st.selectbox("Select :", ["Category", "Sub-Category"])
+        # Helper function to format autopct values
+        def autopct_format(values):
+            def my_format(pct):
+                total = sum(values)
+                val = int(round(pct * total / 100.0))
+                return f"${val:,}"  # Format as currency
+            return my_format
+        
+        st.markdown(f"""
+        **Sales Distribution Overview:**  
+        - This pie chart illustrates the distribution of sales across product categories.  
+        - Technology sales lead the chart, showing a highest demand in this sector.  
+        - Office Supplies and Furniture closely follow, indicating a balanced distribution of sales across categories.  
 
-        # Group data by Category
-        category_sales = df.groupby('Category')['Sales'].sum().reset_index()
+        - 🥇 **Highest Distribution of Sales:** Technology with **${827_456:,}** in total sales.  
+        - 🥈 **Second Highest Distribution of Sales:** Furniture with **${728_659:,}** in total sales.  
+        - 🥉 **Lowest Distribution of Sales:** Office Supplies with **${705_422:,}** in total sales.  
+        """, unsafe_allow_html=True)
+        
 
-        # Plot bar chart
-        fig = px.bar(category_sales, x='Category', y='Sales', 
-                     title="Category-wise Sales Distribution", 
-                     labels={'Category': 'Category', 'Sales': 'Sales (USD)'})
-        st.plotly_chart(fig)
+        with st.expander("**Detailed Sales Distribution per Category**"):
+            # Sort both category and sub-category as per sales
+            Top_subcat = df.groupby(["Category", "Sub-Category"])["Sales"].sum().reset_index()
+            Top_subcat = Top_subcat.sort_values("Sales", ascending=False).head(10)  # Sort and get top 10
+            # Cast Sales column to integer data type
+            Top_subcat["Sales"] = Top_subcat["Sales"].astype(int)
+            # Sort values by Category
+            Top_subcat = Top_subcat.sort_values("Category")
+            # Reset index
+            Top_subcat.reset_index(drop=True, inplace=True)
+    
+            # Calculate the total sales of all categories
+            Top_subcat_1 = Top_subcat.groupby("Category")["Sales"].sum().reset_index()
+
+            # Define colors
+            outer_colors = ['#FE840E', '#009B77', '#BC243C']  # Outer colors of the pie chart
+            inner_colors = ['Orangered', 'tomato', 'coral', "darkturquoise", "mediumturquoise",
+                    "paleturquoise", "lightpink", "pink", "hotpink", "deeppink"]  # Inner colors
+
+            # Create the figure and axis
+            plt.rcParams["figure.figsize"] = (15, 10)  # Set figure size
+            fig, ax = plt.subplots()
+            ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
+
+            # Draw the outer pie chart (Category level)
+            width = 0.1
+            pie = ax.pie(Top_subcat_1['Sales'], radius=1, labels=Top_subcat_1['Category'],
+                 colors=outer_colors, wedgeprops=dict(edgecolor='w'))
+
+            # Draw the inner pie chart (Sub-Category level)
+            pie2 = ax.pie(Top_subcat['Sales'], radius=1 - width, labels=Top_subcat['Sub-Category'],
+                  autopct=autopct_format(Top_subcat['Sales']), labeldistance=0.7,
+                  colors=inner_colors, wedgeprops=dict(edgecolor='w'), pctdistance=0.53, rotatelabels=True)
+
+            # Rotate fractions (autopct values)
+            fraction_text_list = pie2[2]  # Get the percentage text objects
+            for text in fraction_text_list:
+                text.set_rotation(315)  # Rotate the autopct values
+
+            # Add a white circle in the center to create a donut chart effect
+            centre_circle = plt.Circle((0, 0), 0.6, fc='white')
+            fig = plt.gcf()
+            fig.gca().add_artist(centre_circle)
+
+            # Ensure equal aspect ratio
+            ax.axis('equal')
+            plt.tight_layout()
+            st.pyplot(fig)
+            st.markdown(f"""
+                **Sales Distribution Overview:** 
+                - This pie chart illustrates the detail distribution of sales across product categoriesand sub-categories. 
+                - Phone sales lead the chart, showing the highest demand across all sub-categories. 
+                - Chair sales closely follows.
+                - Big gap between the top 2 sub-categories and the rest, indicating a significant difference in demand.
+                        
+                - 🥇 **Highest Distribution of Sales:** Phones with **${327_782:,}** in total sales.
+                - 🥈 **Second Highest Distribution of Sales:** Chairs with **${322_822:,}** in total sales.
+                - 🥉 **Third Highest Distribution of Sales:** Tables with **${202_810:,}** in total sales.
+             """, unsafe_allow_html=True )
+
+        st.subheader("Sales Trends per Product Category")
+
+        # Category selection widgets
+        category_level = st.selectbox("Select Analysis Level:", ["Category", "Sub-Category"])
+
+        if category_level == "Category":
+            selected_category = st.selectbox("Select Category:", df['Category'].unique())
+            filtered_data = df[df['Category'] == selected_category]
+            group_col = 'Category'
+
+        else:
+            selected_category = st.selectbox("Select Sub-Category:", df['Sub-Category'].unique())
+            filtered_data = df[df['Sub-Category'] == selected_category]
+            group_col = 'Sub-Category'
+
+        # Create Line Graph for Selected Category or Subcategory
+        if st.button("Generate Sales Trend"):
+            if filtered_data.empty:
+                st.warning("No data available for selected filters")
+            else:
+                # Group data by selected level and Order Date
+                grouped_data = filtered_data.groupby([group_col, 'Order Date']).agg({'Sales': 'sum'}).reset_index()
+
+                # Generate Line Graphs for the selected category or subcategory
+                categories = grouped_data[group_col].unique()
+
+                plt.figure(figsize=(15, len(categories) * 5))  # Adjust figure size dynamically
+
+                for i, category in enumerate(categories, 1):
+                 # Filter data for the current category or subcategory
+                 category_data = grouped_data[grouped_data[group_col] == category]
+
+                 # Plot line graph for Sales over time
+                plt.subplot(len(categories), 1, i)
+                plt.plot(category_data['Order Date'], category_data['Sales'], label=category, color='blue', alpha=0.7)
+
+                 # Highlight peaks (top sales value)
+                peak_idx = category_data['Sales'].idxmax()
+                peak_date = category_data.loc[peak_idx, 'Order Date']
+                peak_sales = category_data.loc[peak_idx, 'Sales']
+                plt.scatter(peak_date, peak_sales, color='red', s=100, zorder=5)
+                plt.text(peak_date, peak_sales + 10, f"Peak: {peak_sales:,.0f}", fontsize=8, ha='center')
+
+                plt.title(f"{category} Sales Trends", fontsize=14)
+                plt.xlabel("Order Date", fontsize=12)
+                plt.ylabel("Sales", fontsize=12)
+                plt.grid(alpha=0.3)
+
+             # Optional: Add legend
+                plt.legend()
+
+            plt.tight_layout()  # Ensures that plots don't overlap
+            st.pyplot(plt)
+            plt.close()
+            st.write(f"""
+                     **{category} Sales Overview:** 
+                     - This graph illustrates the sales trend for `{category}` over time. 
+                     - Highest sales recorded:`{peak_sales:,.0f} on `{peak_date.strftime('%Y-%m-%d')}.
+                     - Observe seasonal fluctuations and peaks to understand demand variations.""")
 
 # Predictive Model page
 else:
