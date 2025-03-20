@@ -50,7 +50,7 @@ if df.empty:
     """)
     st.stop()
 
-# Add a theme toggle
+# theme toggle
 theme = st.sidebar.selectbox("Theme", ["Light", "Dark"])
 if theme == "Dark":
     st.markdown("""
@@ -79,7 +79,7 @@ else:
         <style>
             /* Light theme styling */
             .stApp {
-                background-color: #f4f4f9; /* Light gray background */
+                background-color: #d7efff; /* Light blue background */
                 color: #2c3e50; /* Dark blue text */
             }
             /* Sidebar styling */
@@ -99,11 +99,14 @@ else:
 
 # Sidebar navigation
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to", ["Introduction", "Visualizations", "Predictive Model"])
+page = st.sidebar.radio("Go to", ["🗒️Introduction", "📊 Sales Performance Analysis", "🔮Predictive Model"])
 
 # Introduction page
-if page == "Introduction":
-    st.title("Introduction of Superstore Dashboard🛍️")
+if page == "🗒️Introduction":
+    st.markdown("""
+    <h1 style='text-align: center;'> Superstore Sales Perfomance Analysis </h1>"
+    <h2 style="text-align: center;">🛍️🛒💳</h2>""" , unsafe_allow_html=True)
+    
     st.image("shopping.jpg", use_container_width=True)
     st.markdown("""
     ## Overview and Aims
@@ -131,9 +134,26 @@ if page == "Introduction":
     info_df = info_df[['Column Name', 'Data Type']]
 
     st.write(info_df)
+    
+    with st.expander("**✍️ Made By:**"):
+        st.write("""
+        **Name: Sara Fuah Jin-Yin**                                                      
+        - **Student ID:** 0136704                                         
+        - **Email:** 0136704@student.uow.edu.my
+                 
+        *Name:** Teh Yu Kang**
+        - **Student ID:** 0136488
+        - **Email:** 0136488@student.uow.edu.my
+                 
+        **Name:** Tan Jo Shen**
+        - **Student ID:** 0136733
+        - **Email:** 0136733@student.uow.edu.my
+         
+        """)
+                 
 
 # Visualizations page
-elif page == "Visualizations":
+elif page == "📊 Sales Performance Analysis":
     st.title("📊 Sales Performance Analysis")
     
     #Selection box for analysis type
