@@ -160,12 +160,11 @@ elif page == "📊 Sales Performance Analysis":
     analysis_type = st.selectbox("View Sales Based On :", ["⌛Timeline", "📚Category", "🌍Geographical Location", "💯 All of the Above"])
     
     # Visualization 1 - Line graph for sales over time
-    if analysis_type == "⌛Timeline":
+    def plot_sales_trend(df):
         st.subheader("Line Graph for Sales Over Time")
-
         # Time granularity selection
         time_granularity = st.selectbox("Select Time Granularity:", ["Monthly", "Yearly"])
-
+    
         # Group data by Monthly or Yearly
         if time_granularity == "Monthly":
             sales_over_time = df.groupby(df['Order Date'].dt.to_period('M'))['Sales'].sum().reset_index()
@@ -173,13 +172,13 @@ elif page == "📊 Sales Performance Analysis":
         else:  
             sales_over_time = df.groupby(df['Order Date'].dt.to_period('Y'))['Sales'].sum().reset_index()
             sales_over_time['Order Date'] = sales_over_time['Order Date'].dt.to_timestamp()
-
+    
         # Plot line graph
         fig = px.line(sales_over_time, x='Order Date', y='Sales', 
                       title=f"{time_granularity} Sales Trend", 
                       labels={'Order Date': 'Date', 'Sales': 'Sales (USD)'})
         st.plotly_chart(fig)
-
+    
         st.markdown(f"""
         ### {time_granularity} Sales Trend Analysis
         - **Purpose**: 
@@ -197,7 +196,7 @@ elif page == "📊 Sales Performance Analysis":
         """)
     
     #category visualization 
-    elif analysis_type == "📚Category":
+    def category_sales_analysis(df):
         st.subheader("Sales Distribution per Category")
         # Group by category and sum sales, then sort
         Top_category = df.groupby("Category")["Sales"].sum().reset_index().sort_values("Sales", ascending=False)
@@ -207,81 +206,74 @@ elif page == "📊 Sales Performance Analysis":
 
         # Convert the total revenue to an integer, then string, then add '$' sign
         total_revenue_category = f"${int(total_revenue_category)}"
-        # pie chart for 3 cat
-        plt.rcParams["figure.figsize"] = (13,5) # width and height of figure is defined in inches
-        plt.rcParams['font.size'] = 12.0 
-        plt.rcParams['font.weight'] = 6 
-        def autopct_format(values): 
-            def my_format(pct): 
-                total = sum(values) 
-                val = int(round(pct*total/100.0))
-                return ' ${v:d}'.format(v=val)
-            return my_format
-        colors = ['#BC243C','#FE840E','#C62168'] 
-        explode = (0.05,0.05,0.05)
-        fig1, ax1 = plt.subplots()
-        ax1.pie(Top_category['Sales'], colors = colors, labels=Top_category['Category'], autopct= autopct_format(Top_category['Sales']), startangle=90,explode=explode)
-        centre_circle = plt.Circle((0,0),0.82,fc='white')  
-        fig = plt.gcf()
-        fig.gca().add_artist(centre_circle) 
-        ax1.axis('equal') 
-        label = ax1.annotate('Total Sales \n'+str(total_revenue_category),color = 'red', xy=(0, 0), fontsize=12, ha="center")
-        plt.tight_layout()
-        plt.show()
-        st.pyplot(fig) 
 
-        # Helper function to format autopct values
+        # Pie chart for 3 categories
+        plt.rcParams["figure.figsize"] = (13, 5)  # Width and height of figure in inches
+        plt.rcParams['font.size'] = 12.0
+        plt.rcParams['font.weight'] = 6
+
         def autopct_format(values):
             def my_format(pct):
                 total = sum(values)
                 val = int(round(pct * total / 100.0))
                 return f"${val:,}"  # Format as currency
             return my_format
-        
+
+        colors = ['#BC243C', '#FE840E', '#C62168']
+        explode = (0.05, 0.05, 0.05)
+        fig1, ax1 = plt.subplots()
+        ax1.pie(Top_category['Sales'], colors=colors, labels=Top_category['Category'],
+                autopct=autopct_format(Top_category['Sales']), startangle=90, explode=explode)
+        centre_circle = plt.Circle((0, 0), 0.82, fc='white')
+        fig = plt.gcf()
+        fig.gca().add_artist(centre_circle)
+        ax1.axis('equal')
+        label = ax1.annotate('Total Sales \n' + str(total_revenue_category), color='red', xy=(0, 0), fontsize=12, ha="center")
+        plt.tight_layout()
+        plt.show()
+        st.pyplot(fig)
+
         st.markdown(f"""
         **Sales Distribution Overview:**  
         - This pie chart illustrates the distribution of sales across product categories.  
-        - Technology sales lead the chart, showing a highest demand in this sector.  
+        - Technology sales lead the chart, showing the highest demand in this sector.  
         - Office Supplies and Furniture closely follow, indicating a balanced distribution of sales across categories.  
 
         - 🥇 **Highest Distribution of Sales:** Technology with **${827_456:,}** in total sales.  
         - 🥈 **Second Highest Distribution of Sales:** Furniture with **${728_659:,}** in total sales.  
         - 🥉 **Lowest Distribution of Sales:** Office Supplies with **${705_422:,}** in total sales.  
         """, unsafe_allow_html=True)
-        
 
         with st.expander("**Detailed Sales Distribution per Category**"):
             # Sort both category and sub-category as per sales
             Top_subcat = df.groupby(["Category", "Sub-Category"])["Sales"].sum().reset_index()
-            Top_subcat = Top_subcat.sort_values("Sales", ascending=False).head(10) 
-            Top_subcat["Sales"] = Top_subcat["Sales"].astype(int)
-            Top_subcat = Top_subcat.sort_values("Category")
-            Top_subcat.reset_index(drop=True, inplace=True)
-    
+            Top_subcat = Top_subcat.sort_values("Sales", ascending=False).head(10)  # Sort and get top 10
+            Top_subcat["Sales"] = Top_subcat["Sales"].astype(int)  # Cast Sales column to integer
+            Top_subcat = Top_subcat.sort_values("Category").reset_index(drop=True)
+
             # Calculate the total sales of all categories
             Top_subcat_1 = Top_subcat.groupby("Category")["Sales"].sum().reset_index()
 
             outer_colors = ['#FE840E', '#009B77', '#BC243C']  # Outer colors of the pie chart
             inner_colors = ['Orangered', 'tomato', 'coral', "darkturquoise", "mediumturquoise",
-                    "paleturquoise", "lightpink", "pink", "hotpink", "deeppink"]  # Inner colors
+                            "paleturquoise", "lightpink", "pink", "hotpink", "deeppink"]  # Inner colors
 
             # Create the figure and axis
-            plt.rcParams["figure.figsize"] = (15, 10)  
+            plt.rcParams["figure.figsize"] = (15, 10)
             fig, ax = plt.subplots()
-            ax.axis('equal')  
+            ax.axis('equal')
             width = 0.1
             pie = ax.pie(Top_subcat_1['Sales'], radius=1, labels=Top_subcat_1['Category'],
-                 colors=outer_colors, wedgeprops=dict(edgecolor='w'))
+                         colors=outer_colors, wedgeprops=dict(edgecolor='w'))
 
-            # the inner pie chart (Sub-Category level)
+            # The inner pie chart (Sub-Category level)
             pie2 = ax.pie(Top_subcat['Sales'], radius=1 - width, labels=Top_subcat['Sub-Category'],
-                  autopct=autopct_format(Top_subcat['Sales']), labeldistance=0.7,
-                  colors=inner_colors, wedgeprops=dict(edgecolor='w'), pctdistance=0.53, rotatelabels=True)
+                          autopct=autopct_format(Top_subcat['Sales']), labeldistance=0.7,
+                          colors=inner_colors, wedgeprops=dict(edgecolor='w'), pctdistance=0.53, rotatelabels=True)
 
-
-            fraction_text_list = pie2[2]  
+            fraction_text_list = pie2[2]
             for text in fraction_text_list:
-                text.set_rotation(315)  
+                text.set_rotation(315)
 
             centre_circle = plt.Circle((0, 0), 0.6, fc='white')
             fig = plt.gcf()
@@ -291,17 +283,18 @@ elif page == "📊 Sales Performance Analysis":
             ax.axis('equal')
             plt.tight_layout()
             st.pyplot(fig)
+
             st.markdown(f"""
                 **Sales Distribution Overview:** 
-                - This pie chart illustrates the detail distribution of sales across product categoriesand sub-categories. 
+                - This pie chart illustrates the detailed distribution of sales across product categories and sub-categories. 
                 - Phone sales lead the chart, showing the highest demand across all sub-categories. 
-                - Chair sales closely follows.
+                - Chair sales closely follow.
                 - Big gap between the top 2 sub-categories and the rest, indicating a significant difference in demand.
                         
                 - 🥇 **Highest Distribution of Sales:** Phones with **${327_782:,}** in total sales.
                 - 🥈 **Second Highest Distribution of Sales:** Chairs with **${322_822:,}** in total sales.
                 - 🥉 **Third Highest Distribution of Sales:** Tables with **${202_810:,}** in total sales.
-             """, unsafe_allow_html=True )
+             """, unsafe_allow_html=True)
 
         st.subheader("Sales Trends per Product Category")
 
@@ -312,7 +305,6 @@ elif page == "📊 Sales Performance Analysis":
             selected_category = st.selectbox("Select Category:", df['Category'].unique())
             filtered_data = df[df['Category'] == selected_category]
             group_col = 'Category'
-
         else:
             selected_category = st.selectbox("Select Sub-Category:", df['Sub-Category'].unique())
             filtered_data = df[df['Sub-Category'] == selected_category]
@@ -331,40 +323,38 @@ elif page == "📊 Sales Performance Analysis":
                 plt.figure(figsize=(15, len(categories) * 5))  # Adjust figure size dynamically
 
                 for i, category in enumerate(categories, 1):
-                 # Filter data for the current category or subcategory
-                 category_data = grouped_data[grouped_data[group_col] == category]
+                    # Filter data for the current category or subcategory
+                    category_data = grouped_data[grouped_data[group_col] == category]
 
-                 # Plot line graph for Sales over time
-                plt.subplot(len(categories), 1, i)
-                plt.plot(category_data['Order Date'], category_data['Sales'], label=category, color='blue', alpha=0.7)
+                    # Plot line graph for Sales over time
+                    plt.subplot(len(categories), 1, i)
+                    plt.plot(category_data['Order Date'], category_data['Sales'], label=category, color='blue', alpha=0.7)
 
-                 # Highlight peaks (top sales value)
-                peak_idx = category_data['Sales'].idxmax()
-                peak_date = category_data.loc[peak_idx, 'Order Date']
-                peak_sales = category_data.loc[peak_idx, 'Sales']
-                plt.scatter(peak_date, peak_sales, color='red', s=100, zorder=5)
-                plt.text(peak_date, peak_sales + 10, f"Peak: {peak_sales:,.0f}", fontsize=8, ha='center')
+                    # Highlight peaks (top sales value)
+                    peak_idx = category_data['Sales'].idxmax()
+                    peak_date = category_data.loc[peak_idx, 'Order Date']
+                    peak_sales = category_data.loc[peak_idx, 'Sales']
+                    plt.scatter(peak_date, peak_sales, color='red', s=100, zorder=5)
+                    plt.text(peak_date, peak_sales + 10, f"Peak: {peak_sales:,.0f}", fontsize=8, ha='center')
 
-                plt.title(f"{category} Sales Trends", fontsize=14)
-                plt.xlabel("Order Date", fontsize=12)
-                plt.ylabel("Sales", fontsize=12)
-                plt.grid(alpha=0.3)
-                plt.legend()
+                    plt.title(f"{category} Sales Trends", fontsize=14)
+                    plt.xlabel("Order Date", fontsize=12)
+                    plt.ylabel("Sales", fontsize=12)
+                    plt.grid(alpha=0.3)
+                    plt.legend()
 
-            plt.tight_layout() 
-            st.pyplot(plt)
-            plt.close()
-            st.write(f"""
-                     **{category} Sales Overview:** 
-                     - This graph illustrates the sales trend for `{category}` over time. 
-                     - Highest sales recorded:`{peak_sales:,.0f} on `{peak_date.strftime('%Y-%m-%d')}.
-                     - Observe seasonal fluctuations and peaks to understand demand variations.""")
+                plt.tight_layout()
+                st.pyplot(plt)
+                plt.close()
+                st.write(f"""
+                         **{category} Sales Overview:** 
+                         - This graph illustrates the sales trend for `{category}` over time. 
+                         - Highest sales recorded: `{peak_sales:,.0f}` on `{peak_date.strftime('%Y-%m-%d')}`.
+                         - Observe seasonal fluctuations and peaks to understand demand variations.""")
 
     # Visualization 3 - Sales by Geographical Location
-    elif analysis_type == "🌍Geographical Location":
+    def geographical_sales_analysis(df):
         st.subheader("Sales by States")
-        
-
         state = ['Alabama', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 
                 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 
                 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 
@@ -375,7 +365,6 @@ elif page == "📊 Sales Performance Analysis":
         state_code = ['AL','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA',
                     'MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD',
                     'TN','TX','UT','VT','VA','WA','WV','WI','WY']
-
 
         state_df = pd.DataFrame({'State Code': state_code, 'State': state})
 
@@ -441,7 +430,7 @@ elif page == "📊 Sales Performance Analysis":
         - **Purpose**: 
             - Analyze sales trends for the selected state over time.
         - **Visualization**: 
-            -Line graph showing monthly sales trends for the selected state.
+            - Line graph showing monthly sales trends for the selected state.
         - **Insights**:
             - Identify periods of high or low sales performance in the state.
             - Understand seasonal trends and growth opportunities specific to the state.
@@ -449,27 +438,30 @@ elif page == "📊 Sales Performance Analysis":
             - Tailor marketing and sales strategies to the state's performance trends.
             - Optimize inventory and resource allocation for the state.
         """)
-        
+
         # Overall sales trend by region
-        subheader = st.subheader("Overall Sales Trend by Region")
+        st.subheader("Overall Sales Trend by Region")
         
-        # Multi-select dropdown for state filtering
-        selected_states = st.multiselect("Select States to View Trends:", options=df['State'].unique(), default=df['State'].unique())
+        # Set default selection to None
+        selected_states = st.multiselect("Select States to View Trends:", options=df['State'].unique(), default=[])
 
-        # Filter data based on selected states
-        filtered_data = df[df['State'].isin(selected_states)]
+        if not selected_states:
+            st.warning("Please select at least one state to view trends.")
+        else:
+            # Filter data based on selected states
+            filtered_data = df[df['State'].isin(selected_states)]
 
-        # Group data by State and Month, then calculate total sales
-        state_sales_trend = filtered_data.groupby([filtered_data['Order Date'].dt.to_period('M'), 'State'])['Sales'].sum().reset_index()
-        state_sales_trend['Order Date'] = state_sales_trend['Order Date'].dt.to_timestamp()
+            # Group data by State and Month, then calculate total sales
+            state_sales_trend = filtered_data.groupby([filtered_data['Order Date'].dt.to_period('M'), 'State'])['Sales'].sum().reset_index()
+            state_sales_trend['Order Date'] = state_sales_trend['Order Date'].dt.to_timestamp()
 
-        # Unified View: Sales Trends by State
-        fig = px.line(state_sales_trend, x='Order Date', y='Sales', color='State',
-            title="Overall Sales Trend by State",
-            labels={'Order Date': 'Date', 'Sales': 'Sales (USD)', 'State': 'State'},
+            # Unified View: Sales Trends by State
+            fig = px.line(state_sales_trend, x='Order Date', y='Sales', color='State',
+                title="Overall Sales Trend by State",
+                labels={'Order Date': 'Date', 'Sales': 'Sales (USD)', 'State': 'State'},
                 template="plotly_white")
 
-        st.plotly_chart(fig)
+            st.plotly_chart(fig)
 
         st.markdown("""
         - **Purpose**: 
@@ -483,6 +475,20 @@ elif page == "📊 Sales Performance Analysis":
             - Develop region-specific strategies based on performance trends.
             - Allocate resources to regions with high growth potential.
         """)
+    
+    if analysis_type == "⌛Timeline":
+        plot_sales_trend(df)
+    
+    elif analysis_type == "📚Category":
+        category_sales_analysis(df)
+        
+    elif analysis_type == "🌍Geographical Location":
+        geographical_sales_analysis(df)
+    
+    else:
+        plot_sales_trend(df)
+        category_sales_analysis(df)
+        geographical_sales_analysis(df)
         
 # Predictive Model page
 else:
