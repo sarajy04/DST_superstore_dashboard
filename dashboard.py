@@ -79,7 +79,7 @@ else:
         <style>
             /* Light theme styling */
             .stApp {
-                background-color: #d7efff; /* Light blue background */
+                background-color: #cce2ec; /* Light blue background */
                 color: #2c3e50; /* Dark blue text */
             }
             /* Sidebar styling */
