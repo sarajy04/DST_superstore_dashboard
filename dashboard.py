@@ -123,29 +123,51 @@ if page == "🗒️Introduction":
     st.write(f"Total records: {len(df)}")
     st.write(f"Total variables: {len(df.columns)}")
     st.write(f"Time range: {df['Order Date'].min().date()} to {df['Order Date'].max().date()}")
-   
-    st.write(f"**Dataset Features and Their Data Types:**")
 
-    info_df = pd.DataFrame({
-        'Column Name': df.columns,
-        'Data Type': [df[col].dtype for col in df.columns],
-    })
-    
-    info_df = info_df[['Column Name', 'Data Type']]
+    with st.expander("ℹ️ Dataset Information"):
+        st.write(f"**Dataset Features and Their Description:**")
+        # Define descriptions for each column
+        column_descriptions = {
+            'Order ID': 'The unique identifier for the order',
+            'Order Date': 'The date when the order was placed',
+            'Ship Date': 'The date when the order was shipped',
+            'Ship Mode': 'The mode of shipment for the order',
+            'Customer ID': 'The unique identifier for the customer',
+            'Customer Name': 'The name of the customer',
+            'Segment': 'The customer segment (e.g., Consumer, Corporate, Home Office)',
+            'Country': 'The country where the order was placed',
+            'City': 'The city where the order was placed',
+            'State': 'The state where the order was placed',
+            'Postal Code': 'The postal code of the customer',
+            'Region': 'The geographical region of the customer',
+            'Product ID': 'The unique identifier for the product',
+            'Category': 'The category of the product sold',
+            'Sub-Category': 'The sub-category of the product sold',
+            'Product Name': 'The name of the product sold',
+            'Sales': 'The revenue generated from the sale',
+            'Month_order': 'The month when the order was placed',
+            'Year_order': 'The year when the order was placed',
+        }
+        
+        # Create a DataFrame with column names and their descriptions
+        info_df = pd.DataFrame({
+            'Column Name': df.columns,
+            'Description': [column_descriptions[col] for col in df.columns],
+        })
 
-    st.write(info_df)
-    
+        st.write(info_df)
+
     with st.expander("**✍️ Made By:**"):
         st.write("""
         **Name: Sara Fuah Jin-Yin**                                                      
         - **Student ID:** 0136704                                         
         - **Email:** 0136704@student.uow.edu.my
                  
-        *Name:** Teh Yu Kang**
+        **Name: Teh Yu Kang**
         - **Student ID:** 0136488
         - **Email:** 0136488@student.uow.edu.my
                  
-        **Name:** Tan Jo Shen**
+        **Name: Tan Jo Shen**
         - **Student ID:** 0136733
         - **Email:** 0136733@student.uow.edu.my
          
@@ -157,10 +179,11 @@ elif page == "📊 Sales Performance Analysis":
     st.title("📊 Sales Performance Analysis")
     
     #Selection box for analysis type
-    analysis_type = st.selectbox("View Sales Based On :", ["⌛Timeline", "📚Category", "🌍Geographical Location", "💯 All of the Above"])
+    analysis_type = st.selectbox("View Sales Based On :", ["⌛Timeline", "📚Category", "🌍Geographical Location"])
     
     # Visualization 1 - Line graph for sales over time
-    def plot_sales_trend(df):
+    if analysis_type == "⌛Timeline":
+    
         st.subheader("Line Graph for Sales Over Time")
         # Time granularity selection
         time_granularity = st.selectbox("Select Time Granularity:", ["Monthly", "Yearly"])
@@ -196,7 +219,7 @@ elif page == "📊 Sales Performance Analysis":
         """)
     
     #category visualization 
-    def category_sales_analysis(df):
+    elif analysis_type == "📚Category":
         st.subheader("Sales Distribution per Category")
         # Group by category and sum sales, then sort
         Top_category = df.groupby("Category")["Sales"].sum().reset_index().sort_values("Sales", ascending=False)
@@ -353,7 +376,7 @@ elif page == "📊 Sales Performance Analysis":
                          - Observe seasonal fluctuations and peaks to understand demand variations.""")
 
     # Visualization 3 - Sales by Geographical Location
-    def geographical_sales_analysis(df):
+    elif analysis_type == "🌍Geographical Location":    
         st.subheader("Sales by States")
         state = ['Alabama', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 
                 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 
@@ -475,20 +498,6 @@ elif page == "📊 Sales Performance Analysis":
             - Develop region-specific strategies based on performance trends.
             - Allocate resources to regions with high growth potential.
         """)
-    
-    if analysis_type == "⌛Timeline":
-        plot_sales_trend(df)
-    
-    elif analysis_type == "📚Category":
-        category_sales_analysis(df)
-        
-    elif analysis_type == "🌍Geographical Location":
-        geographical_sales_analysis(df)
-    
-    else:
-        plot_sales_trend(df)
-        category_sales_analysis(df)
-        geographical_sales_analysis(df)
         
 # Predictive Model page
 else:
