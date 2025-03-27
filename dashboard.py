@@ -8,6 +8,11 @@ import plotly.graph_objects as go
 from prophet import Prophet
 from prophet.plot import plot_plotly
 from datetime import datetime
+# Import machine learning libraries
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from xgboost import XGBRegressor
+from sklearn.model_selection import train_test_split
 
 # Set page configuration
 st.set_page_config(
@@ -501,51 +506,147 @@ elif page == "📊 Sales Performance Analysis":
         
 # Predictive Model page
 else:
-    st.title("🔮 Sales Forecasting")
-    st.markdown("Use historical data to predict future sales")
+    st.title("🔮 Sales Prediction Tool")
 
-    # Prepare data for Prophet
+    # Load data with error handling
     @st.cache_data
-    def prepare_forecast_data(df):
-        daily_sales = df.resample('D', on='Order Date')['Sales'].sum().reset_index()
-        daily_sales.columns = ['ds', 'y']
-        return daily_sales
+    def load_data():
+        try:
+            df = pd.read_csv('train.csv')
+        
+            # Convert date columns to datetime format
+            df['Order Date'] = pd.to_datetime(df['Order Date'], format='%d/%m/%Y')
+            df['Ship Date'] = pd.to_datetime(df['Ship Date'], format='%d/%m/%Y')
+            df['Month_order'] = df['Order Date'].dt.to_period('M')
+            df['Year_order'] = df['Order Date'].dt.to_period('Y')
+            df['Postal Code'] = df['Postal Code'].fillna(5401)
+            return df
+        except Exception as e:
+            st.error(f"Error loading data: {str(e)}")
+            return pd.DataFrame()
 
-    forecast_data = prepare_forecast_data(df)
+    df = load_data()
 
-    # Model parameters
-    with st.sidebar:
-        periods = st.slider("Forecast Period (days)", 30, 365, 90)
-        seasonality = st.selectbox("Seasonality Mode", ["additive", "multiplicative"])
-        changepoint = st.slider("Changepoint Prior Scale", 0.01, 0.5, 0.05, 0.01)
+    if df.empty:
+        st.warning("No data available. Please check:")
+        st.markdown("""
+        - train.csv exists in the current directory
+        - File contains 'Order Date' and 'Ship Date' columns
+        - You're using the correct Kaggle dataset
+        """)
+        st.stop()
 
-    # Train model
+    # Step 1: Preprocess data for supervised models
+    @st.cache_data
+    def preprocess_data(df):
+        df = df.copy()
+        # Drop unnecessary columns
+        columns_to_drop = ['Row ID', 'Order Date', 'Ship Date', 'Customer ID', 'Customer Name', 
+                       'Product ID', 'Product Name']
+        existing_columns = [col for col in columns_to_drop if col in df.columns]
+        df.drop(columns=existing_columns, inplace=True)
+    
+        # One-hot encode categorical variables
+        df = pd.get_dummies(df, columns=['Sub-Category', 'Segment', 'Ship Mode'], drop_first=True)
+    
+        # Ensure all columns are numeric
+        df = df.apply(pd.to_numeric, errors='coerce')
+        df.dropna(inplace=True)
+    
+        return df
+
+    processed_df = preprocess_data(df)
+
+    # Split features and target
+    X = processed_df.drop(columns=['Sales'])
+    y = np.log1p(processed_df['Sales'])  # Log-transform for skewed data
+
+    # Step 2: Train models and cache them
     @st.cache_resource
-    def train_model(data):
-        model = Prophet(
-            seasonality_mode=seasonality,
-            changepoint_prior_scale=changepoint
-        )
-        model.fit(data)
-        return model
+    def train_models(X_train, y_train):
+        # Ensure data is numeric
+        X_train = X_train.astype(float)
+        y_train = y_train.astype(float)
+    
+        models = {
+            "Random Forest": RandomForestRegressor(random_state=42),
+            "Gradient Boosting": GradientBoostingRegressor(random_state=42),
+            "XGBoost": XGBRegressor(random_state=42)
+        }
+        for model in models.values():
+            model.fit(X_train, y_train)
+        return models
 
-    model = train_model(forecast_data)
+    # Split data and train models
+    X_train, X_test, y_train, y_test = train_test_split(
+        X.astype(float),  # Ensure X is numeric
+        y.astype(float),  # Ensure y is numeric
+        test_size=0.2,
+        random_state=42
+    )
+    trained_models = train_models(X_train, y_train)
 
-    # Generate forecast
-    future = model.make_future_dataframe(periods=periods)
-    forecast = model.predict(future)
+    # Step 3: Process user input
+    def process_user_input(input_data, X_columns):
+        input_processed = preprocess_data(input_data)
+        input_processed = input_processed.reindex(columns=X_columns, fill_value=0)
+        return input_processed
 
-    # Show results
-    st.header("Forecast Results")
-    fig = plot_plotly(model, forecast, xlabel="Date", ylabel="Sales")
-    st.plotly_chart(fig, use_container_width=True)
+    # Step 4: Evaluate models
+    def evaluate_models(models, X_test, y_test):
+        from sklearn.metrics import mean_squared_error, mean_absolute_error
+        results = {}
+        for name, model in models.items():
+            y_pred = model.predict(X_test)
+            rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+            mae = mean_absolute_error(y_test, y_pred)
+            results[name] = {"RMSE": rmse, "MAE": mae}
+        return results
 
-    with st.expander("Forecast Components"):
-        fig2 = model.plot_components(forecast)
-        st.write(fig2)
+    # Step 5: Create input form
+    st.subheader("Enter Product Details for Prediction")
+    with st.form("prediction_form"):
+        col1, col2 = st.columns(2)
+    
+        with col1:
+            postal_code = st.number_input("Postal Code", value=5401, step=1)
+            sub_category = st.selectbox("Sub-Category", df['Sub-Category'].unique())
+    
+        with col2:
+            segment = st.selectbox("Customer Segment", df['Segment'].unique())
+            ship_mode = st.selectbox("Shipping Mode", df['Ship Mode'].unique())
+    
+        model_choice = st.selectbox("Select Model", list(trained_models.keys()))
+        submit_button = st.form_submit_button("Predict Sales")
 
-    st.markdown("### Forecast Statistics")
-    st.write(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(periods))
-
+    # Step 6: Handle prediction
+    if submit_button:
+        # Validate inputs
+        if postal_code not in df['Postal Code'].unique():
+            st.warning("Invalid Postal Code. Please enter a valid Postal Code.")
+            st.stop()
+    
+        if sub_category not in df['Sub-Category'].unique():
+            st.warning("Invalid Sub-Category. Please select a valid option.")
+            st.stop()
+    
+        # Create input DataFrame
+        input_data = pd.DataFrame({
+            'Postal Code': [postal_code],
+            'Sub-Category': [sub_category],
+            'Segment': [segment],
+            'Ship Mode': [ship_mode]
+        })
+    
+        # Preprocess user input
+        input_processed = process_user_input(input_data, X.columns)
+    
+        # Predict
+        model = trained_models[model_choice]
+        prediction = model.predict(input_processed)
+        predicted_sales = np.expm1(prediction[0])  # Reverse log transformation
+    
+        # Display result
+        st.success(f"Predicted Sales: **${predicted_sales:,.2f}** using {model_choice}")
 # Footer
 st.sidebar.markdown("---")
