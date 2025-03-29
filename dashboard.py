@@ -122,7 +122,16 @@ if page == "🗒️Introduction":
     - Regional sales breakdown
     - Machine learning-based sales forecasting
     """)
-    
+
+    st.subheader("💥POP QUIZ💥")
+    quiz = st.selectbox("Guess the highest revenue category :", ["Furniture", "Technology", "Office Supplies"])
+    if quiz == "Technology":
+        st.success("Correct! Technology is the highest revenue category.")
+        st.image("congrats.jpg", use_container_width=True)
+
+    else:
+        st.error("Sorry, answer is incorrect. Please try again.")
+
     st.subheader("📋 Dataset Overview")
     st.write(df.head())
     st.write(f"Total records: {len(df)}")
@@ -192,40 +201,86 @@ elif page == "📊 Sales Performance Analysis":
         st.subheader("Line Graph for Sales Over Time")
         # Time granularity selection
         time_granularity = st.selectbox("Select Time Granularity:", ["Monthly", "Yearly"])
+        with st.expander("**ℹ️Why Line Graph?**"):
+            st.markdown(f"""
+            ### {time_granularity} Sales Trend Analysis
+            - **Purpose**: 
+                - Analyze sales trends over time to identify patterns, seasonality, and fluctuations.
+            - **Granularity Options**:
+                - Monthly: Aggregates sales data by month for detailed short-term trends.
+                - Yearly: Aggregates sales data by year for long-term performance insights.
+            - **Visualization**:
+                - Line graph displaying sales trends over the selected time granularity.
+            - **Insights**:
+                - Highlights periods of high or low sales performance.
+                - Helps identify seasonal trends and growth opportunities.
+            - **Actionable Use**:
+                - Inform strategic decisions for inventory management, marketing campaigns, and resource allocation.
+            """)
     
         # Group data by Monthly or Yearly
         if time_granularity == "Monthly":
             sales_over_time = df.groupby(df['Order Date'].dt.to_period('M'))['Sales'].sum().reset_index()
             sales_over_time['Order Date'] = sales_over_time['Order Date'].dt.to_timestamp()
+            # Plot line graph
+            fig = px.line(sales_over_time, x='Order Date', y='Sales', 
+                          title=f"{time_granularity} Sales Trend", 
+                          labels={'Order Date': 'Date', 'Sales': 'Sales (USD)'})
+            st.plotly_chart(fig)
+
+            st.markdown("""
+            ### Monthly Sales Overview
+            - **Seasonality**: 
+                - Sales peak during the holiday season (November and December).
+                - Sales trough in the beginning of the year (January and February).
+                - Indicates a seasonal sales pattern.
+            - **Volatility**: 
+                - Frequent and large fluctuation .
+                - Indicates a highly volatile sales pattern.
+            - **Trend**:   
+                - Overall upward trend in sales over the months.
+                - Indicates a positive growth trajectory.
+            """)
         else:  
             sales_over_time = df.groupby(df['Order Date'].dt.to_period('Y'))['Sales'].sum().reset_index()
             sales_over_time['Order Date'] = sales_over_time['Order Date'].dt.to_timestamp()
-    
-        # Plot line graph
-        fig = px.line(sales_over_time, x='Order Date', y='Sales', 
-                      title=f"{time_granularity} Sales Trend", 
-                      labels={'Order Date': 'Date', 'Sales': 'Sales (USD)'})
-        st.plotly_chart(fig)
-    
-        st.markdown(f"""
-        ### {time_granularity} Sales Trend Analysis
-        - **Purpose**: 
-            - Analyze sales trends over time to identify patterns, seasonality, and fluctuations.
-        - **Granularity Options**:
-            - Monthly: Aggregates sales data by month for detailed short-term trends.
-            - Yearly: Aggregates sales data by year for long-term performance insights.
-        - **Visualization**:
-            - Line graph displaying sales trends over the selected time granularity.
-        - **Insights**:
-            - Highlights periods of high or low sales performance.
-            - Helps identify seasonal trends and growth opportunities.
-        - **Actionable Use**:
-            - Inform strategic decisions for inventory management, marketing campaigns, and resource allocation.
-        """)
+            # Plot line graph
+            fig = px.line(sales_over_time, x='Order Date', y='Sales', 
+                        title=f"{time_granularity} Sales Trend", 
+                        labels={'Order Date': 'Date', 'Sales': 'Sales (USD)'})
+            st.plotly_chart(fig)
+
+            st.markdown(""" 
+            ### Yearly Sales Overview
+            - **Volatility**: 
+                - Low volatility.
+                - Indicates smooth and consistent sales pattern.
+            - **Trend**:   
+                - Overall upward trend in sales over the years after the 2016 dip.
+                - Indicates a positive growth trajectory.
+            """)
+
+
     
     #category visualization 
     elif analysis_type == "📚Category":
         st.subheader("Sales Distribution per Category")
+
+        with st.expander("**ℹ️Why Pie Chart?**"):
+            st.markdown(f"""
+            ### Sales Distribution Pie Chart
+            - **Purpose**: 
+                - Analyze sales distribution among categories over time to identify patterns.
+            - **Visualization**:
+                - Display sales over the categories.
+                - Colour coded segments for each category.
+            - **Insights**:
+                - Highlights gaps between each category.
+                - Helps identify the highest and lowest sales categories.
+            - **Actionable Use**:
+                - Inform strategic decisions for inventory management, marketing campaigns, and resource allocation.
+            """)
+            
         # Group by category and sum sales, then sort
         Top_category = df.groupby("Category")["Sales"].sum().reset_index().sort_values("Sales", ascending=False)
 
