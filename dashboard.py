@@ -501,13 +501,25 @@ elif page == "📊 Sales Performance Analysis":
 
         state_sales_trend = state_data.groupby(state_data['Order Date'].dt.to_period('M'))['Sales'].sum().reset_index()
         state_sales_trend['Order Date'] = state_sales_trend['Order Date'].dt.to_timestamp()
-
+        peak_sales = state_sales_trend['Sales'].max()
+        peak_date = state_sales_trend.loc[state_sales_trend['Sales'].idxmax(), 'Order Date'].strftime('%Y-%m-%d')
+        trough_sales = state_sales_trend['Sales'].min()
+        trough_date = state_sales_trend.loc[state_sales_trend['Sales'].idxmin(), 'Order Date'].strftime('%Y-%m-%d')
         # Plot line graph for sales trend by state
         fig = px.line(state_sales_trend, x='Order Date', y='Sales',
                 title=f"Sales Trend for {selected_state} State",
                 labels={'Order Date': 'Date', 'Sales': 'Sales (USD)'},
                 template="plotly_white")
         st.plotly_chart(fig)
+
+        # Display dynamic description
+        st.markdown(f"""
+        ### {selected_state} Sales Overview:
+        - This graph illustrates the sales trend for `{selected_state}` over time.
+        - Highest sales recorded: **${peak_sales:,.0f}** on `{peak_date}`.
+        - Lowest sales recorded: **${trough_sales:,.0f}** on `{trough_date}`.
+        - Observe seasonal fluctuations and peaks to understand demand variations.
+        """)
 
         st.markdown(""" 
         - **Purpose**: 
