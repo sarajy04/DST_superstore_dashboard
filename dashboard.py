@@ -33,8 +33,8 @@ def load_data():
         
         df['Order Date'] = pd.to_datetime(df['Order Date'], format='%d/%m/%Y')
         df['Ship Date'] = pd.to_datetime(df['Ship Date'], format='%d/%m/%Y')
-        df['Month_order'] = df['Order Date'].dt.to_period('M')
-        df['Year_order'] = df['Order Date'].dt.to_period('Y')
+        df['Month_order'] = df['Order Date'].dt.to_period('M').astype(str)
+        df['Year_order'] = df['Order Date'].dt.to_period('Y').astype(str)
         
         # Fill missing values in 'Postal Code'
         df['Postal Code'] = df['Postal Code'].fillna(5401)
@@ -565,22 +565,22 @@ else:
 
     # Load data with error handling
     @st.cache_data
-    def load_data():
+    def load_prediction_data():
         try:
             df = pd.read_csv('train.csv')
         
             # Convert date columns to datetime format
             df['Order Date'] = pd.to_datetime(df['Order Date'], format='%d/%m/%Y')
             df['Ship Date'] = pd.to_datetime(df['Ship Date'], format='%d/%m/%Y')
-            df['Month_order'] = df['Order Date'].dt.to_period('M')
-            df['Year_order'] = df['Order Date'].dt.to_period('Y')
+            df['Month_order'] = df['Order Date'].dt.to_period('M').astype(str)
+            df['Year_order'] = df['Order Date'].dt.to_period('Y').astype(str)
             df['Postal Code'] = df['Postal Code'].fillna(5401)
             return df
         except Exception as e:
             st.error(f"Error loading data: {str(e)}")
             return pd.DataFrame()
 
-    df = load_data()
+    df = load_prediction_data()
 
     if df.empty:
         st.warning("No data available. Please check:")
@@ -595,25 +595,45 @@ else:
     @st.cache_data
     def preprocess_data(df):
         df = df.copy()
-        # Drop unnecessary columns
-        columns_to_drop = ['Row ID', 'Order Date', 'Ship Date', 'Customer ID', 'Customer Name', 
-                       'Product ID', 'Product Name']
+        # Drop unnecessary columns, but keep 'Sales' and other essential columns
+        columns_to_drop = ['Row ID', 'Customer ID', 'Customer Name', 'Product ID', 'Product Name', 'Order ID']
         existing_columns = [col for col in columns_to_drop if col in df.columns]
-        df.drop(columns=existing_columns, inplace=True)
+        if existing_columns:  # Only drop columns if they exist
+            df.drop(columns=existing_columns, inplace=True)
     
-        # One-hot encode categorical variables
-        df = pd.get_dummies(df, columns=['Sub-Category', 'Segment', 'Ship Mode'], drop_first=True)
-    
-        # Ensure all columns are numeric
-        df = df.apply(pd.to_numeric, errors='coerce')
-        df.dropna(inplace=True)
+        # Encode categorical variables using LabelEncoder
+        categorical_columns = ['Sub-Category', 'Segment', 'Ship Mode', 'Category', 'Region', 'State', 'Country']
+        existing_categorical_columns = [col for col in categorical_columns if col in df.columns]
+        if existing_categorical_columns:
+            for col in existing_categorical_columns:
+                le = LabelEncoder()
+                df[col] = le.fit_transform(df[col].astype(str))
+        # Drop datetime columns
+        datetime_columns = df.select_dtypes(include=['datetime', 'datetimetz']).columns
+        df.drop(columns=datetime_columns, inplace=True, errors='ignore')
+
+        # Ensure all columns are numeric where applicable
+        numeric_columns = df.select_dtypes(include=['number']).columns
+        df[numeric_columns] = df[numeric_columns].apply(pd.to_numeric, errors='coerce')
+        
+        # Fill missing values in numeric columns with 0
+        df[numeric_columns] = df[numeric_columns].fillna(0)
     
         return df
 
     processed_df = preprocess_data(df)
-
+    
+    # Ensure the processed dataset is not empty
+    if processed_df.empty:
+        st.error("Processed dataset is empty. Please check your data preprocessing steps.")
+        st.stop()
+    
     # Split features and target
     X = processed_df.drop(columns=['Sales'])
+    
+    # Ensure all columns in X are numeric
+    X = pd.get_dummies(X, drop_first=True)
+    
     y = np.log1p(processed_df['Sales'])  # Log-transform for skewed data
 
     # Step 2: Train models and cache them
