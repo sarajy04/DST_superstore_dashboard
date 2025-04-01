@@ -11,7 +11,8 @@ from datetime import datetime
 # Import machine learning libraries
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from xgboost import XGBRegressor
+from sklearn.linear_model import LinearRegression
+from xgboost import XGBRegressor 
 from sklearn.model_selection import train_test_split
 
 # Set page configuration
@@ -131,6 +132,7 @@ if page == "🗒️Introduction":
 
     else:
         st.error("Sorry, answer is incorrect. Please try again.")
+        st.image("wrong.jpg", use_container_width=True)
 
     st.subheader("📋 Dataset Overview")
     st.write(df.head())
@@ -696,7 +698,7 @@ else:
         col1, col2 = st.columns(2)
     
         with col1:
-            postal_code = st.number_input("Postal Code", value=5401, step=1)
+            postal_code = st.selectbox("Postal Code", df['Postal Code'].unique())
             sub_category = st.selectbox("Sub-Category", df['Sub-Category'].unique())
     
         with col2:
