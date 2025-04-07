@@ -439,6 +439,23 @@ elif page == "📊 Sales Performance Analysis":
 
     # Visualization 3 - Sales by Geographical Location
     elif analysis_type == "🌍Geographical Location":    
+        
+        with st.expander("ℹ️ Why Choropleth Map?"):
+            st.markdown("""
+            ### Geographical Sales Analysis
+            - **Purpose**: 
+                - Visualize sales distribution across different states in the USA.
+            - **Visualization**: 
+                - Interactive choropleth map with color-coded sales data by state.
+                - Hover over states to view detailed sales figures.
+            - **Insights**: 
+                - Identify regions with high or low sales performance.
+                - Highlight geographical trends and disparities in sales.
+            - **Actionable Use**: 
+                - Optimize regional strategies for marketing, inventory, and resource allocation.
+                - Focus efforts on underperforming regions or capitalize on high-performing areas.
+            """)
+        
         st.subheader("Sales by States")
         state = ['Alabama', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 
                 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 
@@ -480,21 +497,6 @@ elif page == "📊 Sales Performance Analysis":
         )
         st.plotly_chart(fig)
 
-        st.markdown("""
-        ### Geographical Sales Analysis
-        - **Purpose**: 
-            - Visualize sales distribution across different states in the USA.
-        - **Visualization**: 
-            - Interactive choropleth map with color-coded sales data by state.
-            - Hover over states to view detailed sales figures.
-        - **Insights**: 
-            - Identify regions with high or low sales performance.
-            - Highlight geographical trends and disparities in sales.
-        - **Actionable Use**: 
-            - Optimize regional strategies for marketing, inventory, and resource allocation.
-            - Focus efforts on underperforming regions or capitalize on high-performing areas.
-        """)
-
         st.subheader("Sales Trend Analysis by State")
         
         states = df['State'].unique()
@@ -523,19 +525,6 @@ elif page == "📊 Sales Performance Analysis":
         - Observe seasonal fluctuations and peaks to understand demand variations.
         """)
 
-        st.markdown(""" 
-        - **Purpose**: 
-            - Analyze sales trends for the selected state over time.
-        - **Visualization**: 
-            - Line graph showing monthly sales trends for the selected state.
-        - **Insights**:
-            - Identify periods of high or low sales performance in the state.
-            - Understand seasonal trends and growth opportunities specific to the state.
-        - **Actionable Use**:
-            - Tailor marketing and sales strategies to the state's performance trends.
-            - Optimize inventory and resource allocation for the state.
-        """)
-
         # Overall sales trend by region
         st.subheader("Overall Sales Trend by Region")
         
@@ -559,19 +548,6 @@ elif page == "📊 Sales Performance Analysis":
                 template="plotly_white")
 
             st.plotly_chart(fig)
-
-        st.markdown("""
-        - **Purpose**: 
-            - Analyze sales trends across all regions over time.
-        - **Visualization**: 
-            - Line graph showing monthly sales trends for each region.
-        - **Insights**:
-            - Compare sales performance across regions.
-            - Identify regions with consistent growth or seasonal fluctuations.
-        - **Actionable Use**:
-            - Develop region-specific strategies based on performance trends.
-            - Allocate resources to regions with high growth potential.
-        """)
         
 # Predictive Model page
 else:
