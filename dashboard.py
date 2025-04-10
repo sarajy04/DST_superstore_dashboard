@@ -13,6 +13,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.linear_model import LinearRegression
 from xgboost import XGBRegressor 
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.model_selection import train_test_split
 
 # Set page configuration
@@ -551,6 +552,7 @@ elif page == "📊 Sales Performance Analysis":
         
 # Predictive Model page
 else:
+  
     st.title("🔮 Sales Prediction Tool")
 
     # Load data with error handling
@@ -634,9 +636,10 @@ else:
         y_train = y_train.astype(float)
     
         models = {
-            "Random Forest": RandomForestRegressor(random_state=42),
-            "Gradient Boosting": GradientBoostingRegressor(random_state=42),
-            "XGBoost": XGBRegressor(random_state=42)
+            "Random Forest": RandomForestRegressor(n_estimators=300, min_samples_split=2, min_samples_leaf=1, max_depth=10, bootstrap=True, random_state=42),
+            "Gradient Boosting": GradientBoostingRegressor(subsample=0.7, n_estimators=200, max_depth=3, learning_rate=0.05, random_state=42),
+            "HistGradientBoosting": HistGradientBoostingRegressor(min_samples_leaf=20, max_iter=100, max_depth=10, learning_rate=0.1, l2_regularization=0.1, random_state=42),
+            "XGBoost": XGBRegressor(subsample=1.0, n_estimators=200, max_depth=3, learning_rate=0.05, colsample_bytree=0.8, random_state=42)
         }
         for model in models.values():
             model.fit(X_train, y_train)
