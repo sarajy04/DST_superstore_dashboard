@@ -13,6 +13,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.linear_model import LinearRegression
 from xgboost import XGBRegressor 
+from lightgbm import LGBMRegressor 
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.model_selection import train_test_split
 
@@ -552,7 +553,7 @@ elif page == "📊 Sales Performance Analysis":
         
 # Predictive Model page
 else:
-  
+
     st.title("🔮 Sales Prediction Tool")
 
     # Load data with error handling
@@ -560,8 +561,6 @@ else:
     def load_prediction_data():
         try:
             df = pd.read_csv('train.csv')
-        
-            # Convert date columns to datetime format
             df['Order Date'] = pd.to_datetime(df['Order Date'], format='%d/%m/%Y')
             df['Ship Date'] = pd.to_datetime(df['Ship Date'], format='%d/%m/%Y')
             df['Month_order'] = df['Order Date'].dt.to_period('M').astype(str)
@@ -577,144 +576,103 @@ else:
     if df.empty:
         st.warning("No data available. Please check:")
         st.markdown("""
-        - train.csv exists in the current directory
-        - File contains 'Order Date' and 'Ship Date' columns
+        - train.csv exists in the current directory  
+        - File contains 'Order Date' and 'Ship Date' columns  
         - You're using the correct Kaggle dataset
         """)
         st.stop()
 
-    # Step 1: Preprocess data for supervised models
+    # Preprocessing
     @st.cache_data
     def preprocess_data(df):
         df = df.copy()
-        # Drop unnecessary columns, but keep 'Sales' and other essential columns
         columns_to_drop = ['Row ID', 'Customer ID', 'Customer Name', 'Product ID', 'Product Name', 'Order ID']
-        existing_columns = [col for col in columns_to_drop if col in df.columns]
-        if existing_columns:  # Only drop columns if they exist
-            df.drop(columns=existing_columns, inplace=True)
-    
-        # Encode categorical variables using LabelEncoder
-        categorical_columns = ['Sub-Category', 'Segment', 'Ship Mode', 'Category', 'Region', 'State', 'Country']
-        existing_categorical_columns = [col for col in categorical_columns if col in df.columns]
-        if existing_categorical_columns:
-            for col in existing_categorical_columns:
-                le = LabelEncoder()
-                df[col] = le.fit_transform(df[col].astype(str))
-        # Drop datetime columns
-        datetime_columns = df.select_dtypes(include=['datetime', 'datetimetz']).columns
-        df.drop(columns=datetime_columns, inplace=True, errors='ignore')
+        df.drop(columns=[col for col in columns_to_drop if col in df.columns], inplace=True)
 
-        # Ensure all columns are numeric where applicable
+        categorical_columns = ['Sub-Category', 'Segment', 'Ship Mode', 'Category', 'Region', 'State', 'Country']
+        for col in [col for col in categorical_columns if col in df.columns]:
+            le = LabelEncoder()
+            df[col] = le.fit_transform(df[col].astype(str))
+
+        df.drop(columns=df.select_dtypes(include=['datetime']).columns, inplace=True, errors='ignore')
         numeric_columns = df.select_dtypes(include=['number']).columns
-        df[numeric_columns] = df[numeric_columns].apply(pd.to_numeric, errors='coerce')
-        
-        # Fill missing values in numeric columns with 0
-        df[numeric_columns] = df[numeric_columns].fillna(0)
-    
+        df[numeric_columns] = df[numeric_columns].apply(pd.to_numeric, errors='coerce').fillna(0)
+
         return df
 
     processed_df = preprocess_data(df)
-    
-    # Ensure the processed dataset is not empty
+
     if processed_df.empty:
         st.error("Processed dataset is empty. Please check your data preprocessing steps.")
         st.stop()
-    
-    # Split features and target
-    X = processed_df.drop(columns=['Sales'])
-    
-    # Ensure all columns in X are numeric
-    X = pd.get_dummies(X, drop_first=True)
-    
-    y = np.log1p(processed_df['Sales'])  # Log-transform for skewed data
 
-    # Step 2: Train models and cache them
+    X = pd.get_dummies(processed_df.drop(columns=['Sales']), drop_first=True)
+    y = np.log1p(processed_df['Sales'])
+
+    # Train models
     @st.cache_resource
     def train_models(X_train, y_train):
-        # Ensure data is numeric
-        X_train = X_train.astype(float)
-        y_train = y_train.astype(float)
-    
         models = {
-            "Random Forest": RandomForestRegressor(n_estimators=300, min_samples_split=2, min_samples_leaf=1, max_depth=10, bootstrap=True, random_state=42),
-            "Gradient Boosting": GradientBoostingRegressor(subsample=0.7, n_estimators=200, max_depth=3, learning_rate=0.05, random_state=42),
-            "HistGradientBoosting": HistGradientBoostingRegressor(min_samples_leaf=20, max_iter=100, max_depth=10, learning_rate=0.1, l2_regularization=0.1, random_state=42),
-            "XGBoost": XGBRegressor(subsample=1.0, n_estimators=200, max_depth=3, learning_rate=0.05, colsample_bytree=0.8, random_state=42)
+            "Random Forest": RandomForestRegressor(n_estimators=200, min_samples_split=2, min_samples_leaf=1, max_depth=20, bootstrap=True, random_state=42),
+            "Gradient Boosting": GradientBoostingRegressor(subsample=0.8, n_estimators=200, max_depth=3, learning_rate=0.05, random_state=42),
+            "HistGradientBoosting": HistGradientBoostingRegressor(min_samples_leaf=10, max_iter=100, learning_rate=0.1, l2_regularization=0.5, random_state=42),
+            "XGBoost": XGBRegressor(subsample=1.0, n_estimators=300, max_depth=7, learning_rate=0.05, colsample_bytree=1.0, random_state=42),
+            "LightGBM": LGBMRegressor(num_leaves=64, n_estimators=200, min_child_samples=30, max_depth=3, learning_rate=0.1, random_state=42)
         }
         for model in models.values():
             model.fit(X_train, y_train)
         return models
 
-    # Split data and train models
-    X_train, X_test, y_train, y_test = train_test_split(
-        X.astype(float),  # Ensure X is numeric
-        y.astype(float),  # Ensure y is numeric
-        test_size=0.2,
-        random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     trained_models = train_models(X_train, y_train)
 
-    # Step 3: Process user input
+    # Process user input
     def process_user_input(input_data, X_columns):
         input_processed = preprocess_data(input_data)
         input_processed = input_processed.reindex(columns=X_columns, fill_value=0)
         return input_processed
 
-    # Step 4: Evaluate models
-    def evaluate_models(models, X_test, y_test):
-        from sklearn.metrics import mean_squared_error, mean_absolute_error
-        results = {}
-        for name, model in models.items():
-            y_pred = model.predict(X_test)
-            rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-            mae = mean_absolute_error(y_test, y_pred)
-            results[name] = {"RMSE": rmse, "MAE": mae}
-        return results
-
-    # Step 5: Create input form
-    st.subheader("Enter Product Details for Prediction")
+    # User Input Form
+    st.subheader("🛠️ Enter Product Details for Prediction")
     with st.form("prediction_form"):
         col1, col2 = st.columns(2)
-    
         with col1:
             postal_code = st.selectbox("Postal Code", df['Postal Code'].unique())
             sub_category = st.selectbox("Sub-Category", df['Sub-Category'].unique())
-    
+            region = st.selectbox("Region", df['Region'].unique())
         with col2:
             segment = st.selectbox("Customer Segment", df['Segment'].unique())
             ship_mode = st.selectbox("Shipping Mode", df['Ship Mode'].unique())
-    
+
         model_choice = st.selectbox("Select Model", list(trained_models.keys()))
         submit_button = st.form_submit_button("Predict Sales")
 
-    # Step 6: Handle prediction
+    # Handle Prediction
     if submit_button:
-        # Validate inputs
-        if postal_code not in df['Postal Code'].unique():
-            st.warning("Invalid Postal Code. Please enter a valid Postal Code.")
-            st.stop()
-    
-        if sub_category not in df['Sub-Category'].unique():
-            st.warning("Invalid Sub-Category. Please select a valid option.")
-            st.stop()
-    
-        # Create input DataFrame
         input_data = pd.DataFrame({
             'Postal Code': [postal_code],
             'Sub-Category': [sub_category],
+            'Region': [region],
             'Segment': [segment],
             'Ship Mode': [ship_mode]
         })
-    
-        # Preprocess user input
+
         input_processed = process_user_input(input_data, X.columns)
-    
-        # Predict
         model = trained_models[model_choice]
         prediction = model.predict(input_processed)
-        predicted_sales = np.expm1(prediction[0])  # Reverse log transformation
-    
-        # Display result
+        predicted_sales = np.expm1(prediction[0])
+
         st.success(f"Predicted Sales: **${predicted_sales:,.2f}** using {model_choice}")
+
+        # Show prediction plot for selected model
+        st.subheader(f"📊 {model_choice}: Actual vs Predicted")
+        fig, ax = plt.subplots()
+        y_pred_test = model.predict(X_test)
+        sns.scatterplot(x=y_test, y=y_pred_test, ax=ax)
+        ax.set_xlabel("Actual Sales")
+        ax.set_ylabel("Predicted Sales")
+        ax.set_title(f"{model_choice}: Actual vs Predicted")
+        st.pyplot(fig)
+
 # Footer
 st.sidebar.markdown("---")
