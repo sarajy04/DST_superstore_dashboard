@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import joblib
 import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
@@ -15,6 +16,7 @@ from sklearn.linear_model import LinearRegression
 from xgboost import XGBRegressor 
 from lightgbm import LGBMRegressor 
 from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score 
 from sklearn.model_selection import train_test_split
 
 # Set page configuration
@@ -608,7 +610,7 @@ else:
 
     X = pd.get_dummies(processed_df.drop(columns=['Sales']), drop_first=True)
     y = np.log1p(processed_df['Sales'])
-
+    @st.cache_resource
     # Train models
     @st.cache_resource
     def train_models(X_train, y_train):
@@ -622,6 +624,7 @@ else:
         for model in models.values():
             model.fit(X_train, y_train)
         return models
+    
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     trained_models = train_models(X_train, y_train)
@@ -631,6 +634,39 @@ else:
         input_processed = preprocess_data(input_data)
         input_processed = input_processed.reindex(columns=X_columns, fill_value=0)
         return input_processed
+
+    st.subheader("📊 Model Performance Comparison for **all Models**")
+    # Create plot
+    fig, ax = plt.subplots(figsize=(8, 6))
+    evaluation_results = []
+
+    for name, model in trained_models.items():
+        y_pred = model.predict(X_test)
+        y_pred_exp = np.expm1(y_pred)
+        y_test_exp = np.expm1(y_test)
+
+        mse = mean_squared_error(y_test_exp, y_pred_exp)
+        rmse = np.sqrt(mse)
+        r2 = r2_score(y_test_exp, y_pred_exp)
+
+        evaluation_results.append({
+            "Model": name,
+            "MSE": mse,
+            "RMSE": rmse,
+            "R²": r2
+        })
+
+        ax.scatter(y_test_exp, y_pred_exp, label=name, alpha=0.6)
+
+    ax.set_xlabel("Actual Sales")
+    ax.set_ylabel("Predicted Sales")
+    ax.set_title("Actual vs Predicted Sales (All Models)")
+    ax.legend()
+    st.pyplot(fig)
+
+    # Show metrics table
+    st.markdown("### 📋 Evaluation Metrics")
+    st.dataframe(pd.DataFrame(evaluation_results).sort_values("RMSE"))
 
     # User Input Form
     st.subheader("🛠️ Enter Product Details for Prediction")
