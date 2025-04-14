@@ -698,7 +698,33 @@ else:
         -  **Random Forest** shows the highest error metrics
         -  Boosting models outperform traditional Random Forest in this case
         """)
+    #Feature Importance 
+    with st.expander("**🔍 Why only **selected variables** for prediction?**"):
+        st.markdown("""
+        ### **Feature Importance Overview Analysis for All Models**
+        - Each model's top 10 most important features are displayed.
+        - Features are ranked by their contribution to the model's predictions.
+        """)
 
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.image("FI1.png", caption="Random Forest", use_container_width=True)
+            st.image("FI2.png", caption="GradientBoosting", use_container_width=True)
+
+        with col2:
+            st.image("FI3.png", caption="XGBoost", use_container_width=True)
+            st.image("FI4.png", caption="LightGBM", use_container_width=True)
+
+        st.markdown("""
+            - 🏅 Most important feature across models: **Sub-Category**
+                - Indicates strong influence on sales predictions.
+            - Other important features:
+                - **Postal Code**, Region, Segment, Ship Mode
+                - Suggests geographical and customer segment impact on sales.
+            """)
+                        
+                    
 
     # User Input Form
     st.subheader("🛠️ Enter Product Details for Prediction")
