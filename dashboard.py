@@ -449,10 +449,10 @@ elif page == "📊 Sales Performance Analysis":
             - **Purpose**: 
                 - Visualize sales distribution across different states in the USA.
             - **Visualization**: 
-                - Interactive choropleth map with color-coded sales data by state.
+                - Interactive choropleth map with colour-coded sales data by state.
                 - Hover over states to view detailed sales figures.
             - **Insights**: 
-                - Identify regions with high or low sales performance.
+                - Identify regions with high or low sales performance based on colour.
                 - Highlight geographical trends and disparities in sales.
             - **Actionable Use**: 
                 - Optimize regional strategies for marketing, inventory, and resource allocation.
@@ -500,6 +500,16 @@ elif page == "📊 Sales Performance Analysis":
         )
         st.plotly_chart(fig)
 
+        st.markdown(f""" 
+            **Choropleth Map Overview:** 
+                    - This map illustrates the sales distribution across different states in the USA.
+                    - The color intensity indicates the sales volume, with darker shades representing higher sales.
+                    - 🥇California : The darkest shade on the map, with total sales of $446k. 
+                    - 🥈New York : The second darkest shade on the map, with total sales of $306k.
+                    - 🥉Texas : The third darkest shade on the map, with total sale of $168k. 
+        """, unsafe_allow_html=True)
+
+                    
         st.subheader("Sales Trend Analysis by State")
         
         states = df['State'].unique()
