@@ -500,13 +500,13 @@ elif page == "📊 Sales Performance Analysis":
         )
         st.plotly_chart(fig)
 
-        st.markdown(f""" 
-            **Choropleth Map Overview:** 
-                    - This map illustrates the sales distribution across different states in the USA.
-                    - The color intensity indicates the sales volume, with darker shades representing higher sales.
-                    - 🥇California : The darkest shade on the map, with total sales of $446k. 
-                    - 🥈New York : The second darkest shade on the map, with total sales of $306k.
-                    - 🥉Texas : The third darkest shade on the map, with total sale of $168k. 
+        st.markdown(""" 
+        ### **Choropleth Map Overview:**
+        - This map illustrates the sales distribution across different states in the USA.
+        - The color intensity indicates the sales volume, with darker shades representing higher sales.
+        - 🥇California : The darkest shade on the map, with total sales of $446k. 
+        - 🥈New York : The second darkest shade on the map, with total sales of $306k.
+        - 🥉Texas : The third darkest shade on the map, with total sale of $168k. 
         """, unsafe_allow_html=True)
 
                     
@@ -684,7 +684,7 @@ else:
             - Clustered predictions near origin suggest conservative estimations.
             - Outliers: Some actuals > \$15,000 are predicted far lower.
             - Strong overlap among models indicates similar trends.
-            - Slightly better mid-range prediction spread in **LightGBM** and **HistGB**.
+            - Slightly better mid-range prediction spread in **LightGBM** and **HistGradientBoosting**.
             """)
 
 
@@ -692,7 +692,7 @@ else:
         st.markdown("### 📋 Evaluation Metrics")
 
         metrics_data = {
-            "Model": ["Random Forest", "Gradient Boosting", "HistGradBoost", "XGBoost", "LightGBM"],
+            "Model": ["Random Forest", "Gradient Boosting", "HistGradientBoosting", "XGBoost", "LightGBM"],
             "MSE": [1.46, 1.43, 1.42, 1.42, 1.41],
             "RMSE": [1.21, 1.20, 1.19, 1.19, 1.19],
             "R² Score": [0.44, 0.45, 0.46, 0.46, 0.46]
@@ -703,12 +703,12 @@ else:
         st.markdown("""
         **🔍 Performance Summary**
         -  **LightGBM** is the **top performer** (Lowest MSE & RMSE, Highest R²)
-        -  **HistGradBoost** and **XGBoost** also show strong results
+        -  **HistGradientBoosting** and **XGBoost** also show strong results
         -  **Random Forest** shows the highest error metrics
         -  Boosting models outperform traditional Random Forest in this case
         """)
     #Feature Importance 
-    with st.expander("**🔍 Why only **selected variables** for prediction?**"):
+    with st.expander("**🔍 Why only selected variables for prediction?**"):
         st.markdown("""
         ### **Feature Importance Overview Analysis for All Models**
         - Each model's top 10 most important features are displayed.
