@@ -624,10 +624,10 @@ else:
     @st.cache_resource
     def train_models(X_train, y_train):
         models = {
-            "Random Forest": RandomForestRegressor(n_estimators=200, min_samples_split=2, min_samples_leaf=1, max_depth=20, bootstrap=True, random_state=42),
-            "Gradient Boosting": GradientBoostingRegressor(subsample=0.8, n_estimators=200, max_depth=3, learning_rate=0.05, random_state=42),
+            "Random Forest": RandomForestRegressor(n_estimators=100, min_samples_split=10, min_samples_leaf=4, max_depth=10, bootstrap=True, random_state=42),
+            "Gradient Boosting": GradientBoostingRegressor(subsample=0.7, n_estimators=200, max_depth=3, learning_rate=0.05, random_state=42),
             "HistGradientBoosting": HistGradientBoostingRegressor(min_samples_leaf=10, max_iter=100, learning_rate=0.1, l2_regularization=0.5, random_state=42),
-            "XGBoost": XGBRegressor(subsample=1.0, n_estimators=300, max_depth=7, learning_rate=0.05, colsample_bytree=1.0, random_state=42),
+            "XGBoost": XGBRegressor(subsample=1.0, n_estimators=200, max_depth=3, learning_rate=0.05, colsample_bytree=0.8, random_state=42),
             "LightGBM": LGBMRegressor(num_leaves=64, n_estimators=200, min_child_samples=30, max_depth=3, learning_rate=0.1, random_state=42)
         }
         for model in models.values():
@@ -693,17 +693,17 @@ else:
 
         metrics_data = {
             "Model": ["Random Forest", "Gradient Boosting", "HistGradientBoosting", "XGBoost", "LightGBM"],
-            "MSE": [1.46, 1.43, 1.42, 1.42, 1.41],
-            "RMSE": [1.21, 1.20, 1.19, 1.19, 1.19],
-            "R² Score": [0.44, 0.45, 0.46, 0.46, 0.46]
+            "MSE": [1.63, 1.47, 1.43, 1.49, 1.43],
+            "RMSE": [1.28, 1.21, 1.20, 1.22, 1.20],
+            "R² Score": [0.38, 0.44, 0.45, 0.43, 0.45]
         }
 
         metrics_df = pd.DataFrame(metrics_data)
         st.table(metrics_df)
         st.markdown("""
         **🔍 Performance Summary**
-        -  **LightGBM** is the **top performer** (Lowest MSE & RMSE, Highest R²)
-        -  **HistGradientBoosting** and **XGBoost** also show strong results
+        -  **LightGBM & HistGradientBoosting** is the **top performer** (Lowest MSE & RMSE, Highest R²)
+        -  **XGBoost** also show strong results
         -  **Random Forest** shows the highest error metrics
         -  Boosting models outperform traditional Random Forest in this case
         """)
@@ -718,12 +718,12 @@ else:
         col1, col2 = st.columns(2)
 
         with col1:
-            st.image("FI1.png", caption="Random Forest", use_container_width=True)
-            st.image("FI2.png", caption="GradientBoosting", use_container_width=True)
+            st.image("RandomForest.png", caption="Random Forest", use_container_width=True)
+            st.image("GradBoost.png", caption="GradientBoosting", use_container_width=True)
 
         with col2:
-            st.image("FI3.png", caption="XGBoost", use_container_width=True)
-            st.image("FI4.png", caption="LightGBM", use_container_width=True)
+            st.image("XGBoost.png", caption="XGBoost", use_container_width=True)
+            st.image("LightGBM.png", caption="LightGBM", use_container_width=True)
 
         st.markdown("""
             - 🏅 Most important feature across models: **Sub-Category**
@@ -781,8 +781,8 @@ else:
         if model_choice == "Random Forest":
             st.markdown("""
             ✅**Random Forest Overview:**
-            - **General Trend** : The points cluster around the diagonal, showing good alignment between actual and predicted sales.
-            - **Accuracy** : The predictions appears slightly more spread out compared to the rest, indicating a bit more variability in predictions.
+            - **General Trend** : The mojority of points are clustered slightly below the diagonal, showing moderate predictive performance.
+            - **Accuracy** : Moderate accuracy, with the predictions appearing slightly more spread out compared to the rest, indicating a bit more variability in predictions.
             - **Outliers** : A few outliers are visible, particularly at higher actual sales values. 
             - **Range** : Covers a broad range of sales values, but with slightly more deviation from the diagonal compared to other models.
             """)
@@ -790,17 +790,17 @@ else:
         elif model_choice == "Gradient Boosting":
             st.markdown("""
             ✅ **Gradient Boosting Overview:**
-            - **General Trend** : The points are clustered around the diagonal, showing good alignment between actual and predicted sales.
-            - **Accuracy** : High accuracy, with most predictions closely matching actual sales.
-            - **Outliers** : Fewer noticeable outliers compared to Random Forest, suggesting more consistent predictions.
+            - **General Trend** : The mojority of points are clustered around the diagonal, showing average predictive performance.
+            - **Accuracy** : Average accuracy, with some predictions closely matching actual sales.
+            - **Outliers** : Fewer noticeable outliers compared to other models, suggesting more consistent predictions.
             - **Range** : Effective prediction across a wide range of sales values, with a slight tendency to underestimate at higher actual sales levels.
             """)
 
         elif model_choice == "HistGradientBoosting":
             st.markdown("""
             ✅**HistGradientBoost Overview:**
-            - **General Trend** : Points are tightly clustered around the diagonal, indicating good alignment between actual and predicted sales.
-            - **Accuracy** : High accuracy, with minimal deviation from the diagonal.
+            - **General Trend** : Points are densely clustered around the diagonal, indicating good and accurate predictive performance.
+            - **Accuracy** : Highest accuracy, with minimal deviation from the diagonal.
             - **Outliers** : Almost no significant outliers, suggesting robust performance across the dataset.
             - **Range** :Effective prediction across a broad range of sales values, with good coverage of both low and high sales figures. 
             """)
@@ -808,16 +808,16 @@ else:
         elif model_choice == "XGBoost":
             st.markdown("""
             ✅**XGBoost Overview:**
-            - **General Trend** : The points follow a clear diagonal pattern, indicating good predictive performance.
-            - **Accuracy** : High accuracy, with most predictions closely aligned with actual sales.
-            - **Outliers** : Some minor deviations are visible, particularly at higher actual sales values, where the model may slightly overpredict.
+            - **General Trend** : The points follow a diagonal pattern, indicating an average predictive performance.
+            - **Accuracy** : Average accuracy, with the predictions appearing significantly more spread out compared to the rest, indicating a bit more variability in predictions.
+            - **Outliers** : Deviations are visible, particularly at higher actual sales values, where the model may slightly underpredict.
             - **Range** : Effective prediction across a broad range of sales values, with good coverage of both low and high sales figures.
             """)
 
         elif model_choice == "LightGBM":
             st.markdown("""
             🏅**LightGBM Overview:**
-            - **General Trend** : The points are densely clustered around a diagonal line, indicating good predictive performance.
+            - **General Trend** : The points are densely clustered around a diagonal line, indicating good and accurate predictive performance.
             - **Accuracy** : Highest accuracy, with most predictions closely aligned with actual sales.
             - **Outliers** : Only minor deviations from the diagonal are visible, indicating potential overestimation or underestimation for certain data points.
             - **Range** : Effective prediction across a broad range of sales values, with good coverage of both low and high sales figures.
