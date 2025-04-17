@@ -702,7 +702,7 @@ else:
         st.table(metrics_df)
         st.markdown("""
         **🔍 Performance Summary**
-        -  **LightGBM & HistGradientBoosting** is the **top performer** (Lowest MSE & RMSE, Highest R²)
+        -  **LightGBM & HistGradientBoosting** are the **top performers** (Lowest MSE & RMSE, Highest R²)
         -  **XGBoost** also show strong results
         -  **Random Forest** shows the highest error metrics
         -  Boosting models outperform traditional Random Forest in this case
