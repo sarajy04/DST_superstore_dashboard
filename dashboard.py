@@ -713,6 +713,7 @@ else:
         ### **Feature Importance Overview Analysis for All Models**
         - Each model's top 10 most important features are displayed.
         - Features are ranked by their contribution to the model's predictions.
+        - HistGradientBoosting does not support feature importance extraction, hence not included.
         """)
 
         col1, col2 = st.columns(2)
