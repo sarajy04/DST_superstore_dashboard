@@ -799,7 +799,7 @@ else:
 
         elif model_choice == "HistGradientBoosting":
             st.markdown("""
-            ✅**HistGradientBoost Overview:**
+            🏅**HistGradientBoost Overview:**
             - **General Trend** : Points are densely clustered around the diagonal, indicating good and accurate predictive performance.
             - **Accuracy** : Highest accuracy, with minimal deviation from the diagonal.
             - **Outliers** : Almost no significant outliers, suggesting robust performance across the dataset.
